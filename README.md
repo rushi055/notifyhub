@@ -1,249 +1,134 @@
 # NotifyHub
 
-A scalable, multi-channel notification system built with Node.js that delivers notifications via email and real-time in-app channels. It uses Kafka for async event streaming, BullMQ for reliable job processing with retries, Redis for caching and WebSocket state, and PostgreSQL for persistent storage. Designed with a microservice-friendly architecture where the API, consumers, and workers run as independent processes that can be scaled horizontally.
+NotifyHub is a notification system built with Node.js, PostgreSQL, Redis, Kafka, BullMQ, and Socket.io.
 
----
+It supports:
+- email notifications
+- in-app real-time notifications
+- user preferences
+- a web dashboard for testing
+- concurrent load testing
 
-## Architecture
-
-```
-                                ┌──────────────┐
-                                │  PostgreSQL   │
-                                │   (Storage)   │
-                                └──────┬───────┘
-                                       │
-┌──────────┐    ┌───────────┐    ┌─────┴──────┐    ┌───────────┐    ┌───────────────┐
-│  Client   │───▶│  Express  │───▶│ Notification│───▶│   Kafka   │───▶│   Consumer    │
-│   App     │    │   API     │    │  Service    │    │  (Queue)  │    │  (Group)      │
-└──────────┘    └───────────┘    └────────────┘    └───────────┘    └───────┬───────┘
-                     │                                                      │
-                     │                                              ┌───────┴───────┐
-                     │                                              │    BullMQ      │
-                     │                                              │   (Job Queues) │
-                     │                                              └───────┬───────┘
-                     │                                           ┌──────────┴──────────┐
-                     │                                           │                     │
-                     │                                    ┌──────┴──────┐    ┌─────────┴───────┐
-                     │                                    │ Email Worker │    │ In-App Worker   │
-                     │                                    │ (Nodemailer) │    │ (Socket.io)     │
-                     │                                    └─────────────┘    └────────┬────────┘
-                     │                                                                │
-                     │    ┌──────────────┐                                            │
-                     └───▶│    Redis      │◀───────────────────────────────────────────┘
-                          │ (Cache/State) │
-                          └──────────────┘
-```
-
----
-
-## Tech Stack
-
-| Technology       | Purpose                    | Why                                                                 |
-| ---------------- | -------------------------- | ------------------------------------------------------------------- |
-| **Node.js**      | Runtime                    | Non-blocking I/O, ideal for high-throughput event-driven workloads  |
-| **Express**      | HTTP API framework         | Minimal, flexible, widely adopted                                   |
-| **Kafka**        | Event streaming            | Durable, ordered, partitioned message delivery at scale             |
-| **BullMQ**       | Job queue & retries        | Redis-backed queues with exponential backoff, concurrency control   |
-| **Redis**        | Caching & real-time state  | Sub-ms reads for preferences, socket mapping, rate limiting         |
-| **Socket.io**    | Real-time WebSockets       | Bi-directional communication for instant in-app notifications       |
-| **PostgreSQL**   | Primary database           | ACID-compliant, JSONB support for flexible notification metadata    |
-| **Nodemailer**   | Email delivery             | Reliable SMTP transport with Gmail integration                      |
-| **Docker Compose** | Infrastructure            | One-command setup for Postgres, Redis, Kafka, and Zookeeper         |
-
----
-
-## Key Features
-
-- **Multi-channel delivery** — Email + real-time in-app notifications via a single API call
-- **Async event pipeline via Kafka** — API responds in <10ms; heavy work happens asynchronously
-- **Retry with exponential backoff** — Failed email jobs retry up to 5 times (1s → 2s → 4s → 8s → 16s)
-- **Dead-letter queue** — Failed jobs are retained (last 50) for inspection via Bull Board
-- **Per-user preference management** — Users control which channels are enabled; cached in Redis (5 min TTL)
-- **Rate limiting** — 10 notifications per user per minute, enforced via Redis counters
-- **Real-time WebSocket delivery** — Online users receive notifications instantly via Socket.io
-- **Visual queue monitoring** — Bull Board dashboard at `/dashboard` shows job status, retries, and failures
-- **Horizontal scaling** — Stateless API servers + independent Kafka consumers + independent workers
-
----
-
-## Getting Started
-
-### Prerequisites
+## Prerequisites
 
 - Node.js 18+
-- Docker & Docker Compose
+- Docker and Docker Compose
 
-### Setup
+## First-Time Setup
 
 ```bash
-# 1. Clone the repo
 git clone https://github.com/your-username/notifyhub.git
 cd notifyhub
-
-# 2. Create your .env file
 cp .env.example .env
-# Edit .env and fill in your Gmail credentials (GMAIL_USER and GMAIL_APP_PASSWORD)
+```
 
-# 3. Start infrastructure (Postgres, Redis, Kafka, Zookeeper)
+Edit `.env` and fill in the required values, especially Gmail credentials if you want email delivery.
+
+Then run:
+
+```bash
 docker-compose up -d
-
-# 4. Install dependencies
 npm install
-
-# 5. Run database migrations
 npm run migrate
-
-# 6. Start all services (API + Kafka consumer + workers)
 npm run dev
 ```
 
-### Verify
+## Start The Project
 
-- Health check: [http://localhost:3000/api/health](http://localhost:3000/api/health)
-- Bull Board dashboard: [http://localhost:3000/dashboard](http://localhost:3000/dashboard)
-- WebSocket test page: [http://localhost:3000/test.html](http://localhost:3000/test.html)
-- **Web Interface**: [http://localhost:3000/app/](http://localhost:3000/app/) (Login/Register and full dashboard)
-
----
-
-## Web Interface
-
-NotifyHub includes a professional web interface for managing notifications without using API tools like Postman.
-
-### Access the Dashboard
-
-Open [http://localhost:3000/app/](http://localhost:3000/app/) in your browser.
-
-### Features
-
-1. **User Authentication**
-   - Register new accounts
-   - Login with email/password
-   - JWT-based session management
-
-2. **Send Notifications**
-   - Send to any user by UUID
-   - Select notification type (Info, Success, Warning, Error, Reminder, Promotion)
-   - Choose delivery channels (Email, In-App, or both)
-   - Add custom title, message, and metadata
-   - Quick "Use My ID" button for self-testing
-
-3. **View Notifications**
-   - List all your notifications with pagination
-   - See status (pending, delivered, failed)
-   - Visual indicators for notification types
-   - Read/unread status tracking
-
-4. **Manage Preferences**
-   - Enable/disable email and in-app channels
-   - Set quiet hours (no notifications during specified times)
-   - Update email address for notifications
-
-5. **Real-time Monitor**
-   - WebSocket connection status indicator
-   - Live notification feed as they arrive
-   - Debug logs for troubleshooting
-   - Connection controls
-
-### Quick Demo Flow
+Normal startup:
 
 ```bash
-# 1. Open the web interface
-http://localhost:3000/app/
-
-# 2. Register a new account
-Click "Register" → Enter details → Create Account
-
-# 3. Send yourself a test notification
-Click "Use My ID" button
-Select type: "Info"
-Title: "Welcome to NotifyHub"
-Message: "Your first notification!"
-Check "In-App Notification"
-Click "Send Notification"
-
-# 4. View it in real-time
-Click "Real-time Monitor" in sidebar
-Click "Connect"
-Send another notification from the "Send Notification" section
-Watch it appear instantly!
-
-# 5. Check your notification history
-Click "All Notifications" in sidebar
-See all notifications with timestamps and status
+docker-compose up -d
+npm run dev
 ```
 
-See [frontend/README.md](frontend/README.md) for detailed interface documentation.
+If you deleted Docker volumes earlier, run migrations again:
 
----
+```bash
+docker-compose up -d
+npm run migrate
+npm run dev
+```
 
-## API Reference
+## Stop The Project Safely
 
-### Auth
+Stop the Node processes:
 
-| Method | Path                  | Auth | Description               |
-| ------ | --------------------- | ---- | ------------------------- |
-| POST   | `/api/auth/register`  | No   | Register a new user       |
-| POST   | `/api/auth/login`     | No   | Login and receive JWT     |
+```bash
+taskkill /IM node.exe /F
+```
 
-### Notifications
+Stop containers without deleting data:
 
-| Method | Path                                     | Auth   | Description                        |
-| ------ | ---------------------------------------- | ------ | ---------------------------------- |
-| POST   | `/api/notify`                            | Bearer | Send a notification (queues it)    |
-| GET    | `/api/notifications/:userId`             | Bearer | List notifications (paginated)     |
-| PATCH  | `/api/notifications/:id/read`            | Bearer | Mark a notification as read        |
-| PATCH  | `/api/notifications/read-all/:userId`    | Bearer | Mark all notifications as read     |
-| GET    | `/api/notifications/unread-count/:userId`| Bearer | Get unread notification count      |
+```bash
+docker-compose down
+```
 
-### Preferences
+Do not use this unless you want a full reset:
 
-| Method | Path                        | Auth   | Description                    |
-| ------ | --------------------------- | ------ | ------------------------------ |
-| GET    | `/api/preferences/:userId`  | Bearer | Get user preferences           |
-| PUT    | `/api/preferences/:userId`  | Bearer | Update user preferences        |
+```bash
+docker-compose down -v
+```
 
-### System
+`docker-compose down -v` removes volumes and deletes persisted database data.
 
-| Method | Path           | Auth | Description          |
-| ------ | -------------- | ---- | -------------------- |
-| GET    | `/api/health`  | No   | Health check         |
-| GET    | `/dashboard`   | No   | Bull Board UI        |
+## Open In Browser
 
----
+- App UI: `http://localhost:3000/app/`
+- Bull Board: `http://localhost:3000/dashboard`
+- Health check: `http://localhost:3000/api/health`
+- WebSocket test page: `http://localhost:3000/test.html`
 
-## How It Works
+## How To Test
 
-The journey of a notification in 6 steps:
+### Web UI
 
-1. **API receives request** — A client sends `POST /api/notify` with the target user, message, and desired channels (`email`, `inapp`). The request is validated with Zod and rate-limited to 10/min per user.
+1. Open `http://localhost:3000/app/`
+2. Register a user
+3. Log in
+4. Copy your user ID from the dashboard
+5. Send a notification to yourself
+6. Open Real-time Monitor to see live in-app notifications
 
-2. **Saved to database** — The notification is inserted into PostgreSQL with status `pending`. This guarantees the notification is persisted even if downstream services are temporarily unavailable.
+### Load Test
 
-3. **Published to Kafka** — The notification is published to the `notifications` topic, keyed by `userId` for ordered delivery per user. The API responds `201 { status: 'queued' }` immediately.
+Run:
 
-4. **Consumer routes by channel** — The Kafka consumer picks up the message, checks the user's delivery preferences (cached in Redis), and adds jobs to the appropriate BullMQ queues: `email-notifications` and/or `inapp-notifications`.
+```bash
+npm run loadtest
+```
 
-5. **Workers deliver** — Each worker processes jobs from its queue:
-   - **Email Worker**: Fetches the user's email from the database, sends via Gmail/Nodemailer, and updates the notification status to `delivered`.
-   - **In-App Worker**: Checks Redis for the user's active WebSocket connection. If online, emits a real-time event via Socket.io. Updates status to `delivered` either way.
+This simulates multiple users registering, logging in, and sending notifications concurrently.
 
-6. **Client receives** — Online users receive notifications instantly through their WebSocket connection. Offline users see notifications when they next fetch their notification list.
+### Database Check
 
----
+View users:
 
-## Scalability
+```bash
+docker exec notifyhub-postgres psql -U admin -d notifyhub -c "SELECT id, name, email FROM users;"
+```
 
-Each component can be scaled independently:
+View notifications:
 
-### API Servers
-The Express API is stateless — all state lives in PostgreSQL and Redis. Run multiple instances behind a load balancer (e.g., Nginx, AWS ALB). Socket.io can be scaled with the `@socket.io/redis-adapter` to share events across instances.
+```bash
+docker exec notifyhub-postgres psql -U admin -d notifyhub -c "SELECT id, user_id, title, type, status, is_read, channels FROM notifications ORDER BY created_at DESC LIMIT 10;"
+```
 
-### Kafka Consumers
-Add more consumer instances to the `notifyhub-workers` consumer group. Kafka automatically rebalances partitions across consumers. More partitions = more parallelism.
+View preferences:
 
-### Workers
-Email and in-app workers are standalone Node.js processes. Spin up additional instances of each — BullMQ distributes jobs across all connected workers automatically. Adjust `concurrency` per worker to tune throughput.
+```bash
+docker exec notifyhub-postgres psql -U admin -d notifyhub -c "SELECT user_id, email_enabled, inapp_enabled, email_address FROM user_preferences;"
+```
+
+## Important Commands
+
+```bash
+npm run dev
+npm run migrate
+npm run loadtest
+docker-compose up -d
+docker-compose down
+```
 
 ```
                     ┌── API Server 1 ──┐
