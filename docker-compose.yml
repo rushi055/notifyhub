@@ -1,0 +1,54 @@
+# NotifyHub Docker Compose Configuration
+# Run with: docker-compose up -d
+
+services:
+  # PostgreSQL 15 - Primary database for storing notifications, users, and preferences
+  postgres:
+    image: postgres:15
+    container_name: notifyhub-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: notifyhub
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # Redis 7 Alpine - Used for caching, session management, and real-time pub/sub
+  redis:
+    image: redis:7-alpine
+    container_name: notifyhub-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+
+  # Zookeeper - Required by Kafka for cluster coordination and metadata management
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: notifyhub-zookeeper
+    restart: unless-stopped
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  # Kafka - Message broker for asynchronous notification processing and event streaming
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: notifyhub-kafka
+    restart: unless-stopped
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+
+volumes:
+  # Named volume for PostgreSQL data persistence across container restarts
+  postgres_data:

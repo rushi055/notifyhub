@@ -1,0 +1,37 @@
+{
+  "name": "notifyhub",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "concurrently \"nodemon src/server.js\" \"nodemon src/kafka/consumer.js\" \"nodemon src/queues/emailWorker.js\" \"nodemon src/queues/inappWorker.js\"",
+    "migrate": "node scripts/migrate.js",
+    "loadtest": "node scripts/loadtest.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@bull-board/api": "^6.20.6",
+    "@bull-board/express": "^6.20.6",
+    "bcryptjs": "^3.0.3",
+    "bullmq": "^5.72.1",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.0",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "kafkajs": "^2.2.4",
+    "morgan": "^1.10.1",
+    "nodemailer": "^8.0.4",
+    "pg": "^8.20.0",
+    "redis": "^5.11.0",
+    "socket.io": "^4.8.3",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "nodemon": "^3.1.14"
+  }
+}

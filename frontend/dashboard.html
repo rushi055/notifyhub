@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NotifyHub - Dashboard</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="dashboard-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h2>NotifyHub</h2>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="#" class="nav-item active" data-section="send">
+          <span class="nav-icon">📤</span> Send Notification
+        </a>
+        <a href="#" class="nav-item" data-section="notifications">
+          <span class="nav-icon">📋</span> All Notifications
+        </a>
+        <a href="#" class="nav-item" data-section="preferences">
+          <span class="nav-icon">⚙️</span> Preferences
+        </a>
+        <a href="#" class="nav-item" data-section="realtime">
+          <span class="nav-icon">🔴</span> Real-time Monitor
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="user-info">
+          <p id="user-email"></p>
+          <p style="font-size: 0.75rem; color: rgba(255,255,255,0.5); margin-top: 8px; word-break: break-all;" id="sidebar-user-id"></p>
+          <button onclick="logout()" class="btn-text">Logout</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <div class="top-bar">
+        <h1 id="section-title">Send Notification</h1>
+        <div class="user-badge">
+          <span id="user-id-display"></span>
+        </div>
+      </div>
+
+      <!-- Send Notification Section -->
+      <section id="send-section" class="content-section active">
+        <!-- User Info Card -->
+        <div class="card" style="background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%); color: white; margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <h4 style="color: white; font-size: 0.9rem; margin-bottom: 8px; opacity: 0.9;">Your User ID (for demo/testing)</h4>
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <code id="full-user-id" style="background: rgba(255,255,255,0.15); padding: 10px 16px; border-radius: 6px; font-size: 0.95rem; font-family: 'Courier New', monospace; color: white; border: 1px solid rgba(255,255,255,0.2);"></code>
+                <button onclick="copyUserId(event)" class="btn" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3);" title="Copy to clipboard">📋 Copy</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Send New Notification</h3>
+          <form id="send-notification-form">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="recipient-id">Recipient User ID</label>
+                <input type="text" id="recipient-id" placeholder="Enter user UUID" required>
+                <small>Use your own ID to test: <button type="button" class="btn-link" onclick="useSelfId()">Use My ID</button></small>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group flex-1">
+                <label for="notification-type">Notification Type</label>
+                <select id="notification-type" required>
+                  <option value="">Select type...</option>
+                  <option value="info">Information</option>
+                  <option value="success">Success</option>
+                  <option value="warning">Warning</option>
+                  <option value="error">Error</option>
+                  <option value="reminder">Reminder</option>
+                  <option value="promotion">Promotion</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="notification-title">Title</label>
+              <input type="text" id="notification-title" placeholder="e.g., New Message" required>
+            </div>
+
+            <div class="form-group">
+              <label for="notification-message">Message / Description</label>
+              <textarea id="notification-message" rows="4" placeholder="Enter notification message..." required></textarea>
+            </div>
+
+            <div class="form-group">
+              <label>Delivery Channels</label>
+              <div class="checkbox-group">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="channel-email" value="email">
+                  <span>Email Notification</span>
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" id="channel-inapp" value="inapp" checked>
+                  <span>In-App Notification</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="notification-metadata">Additional Metadata (JSON, optional)</label>
+              <textarea id="notification-metadata" rows="3" placeholder='{"key": "value"}'></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Send Notification</button>
+            <div id="send-result" class="result-message"></div>
+          </form>
+        </div>
+      </section>
+
+      <!-- Notifications List Section -->
+      <section id="notifications-section" class="content-section">
+        <div class="card">
+          <div class="card-header">
+            <h3>Your Notifications</h3>
+            <button onclick="loadNotifications()" class="btn btn-secondary">Refresh</button>
+          </div>
+          <div id="notifications-list"></div>
+        </div>
+      </section>
+
+      <!-- Preferences Section -->
+      <section id="preferences-section" class="content-section">
+        <div class="card">
+          <h3>Notification Preferences</h3>
+          <form id="preferences-form">
+            <div class="form-group">
+              <label>Enabled Channels</label>
+              <div class="checkbox-group">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="pref-email" name="emailEnabled">
+                  <span>Email Notifications</span>
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" id="pref-inapp" name="inappEnabled">
+                  <span>In-App Notifications</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group flex-1">
+                <label for="quiet-start">Quiet Hours Start</label>
+                <input type="time" id="quiet-start" name="quietHoursStart">
+              </div>
+              <div class="form-group flex-1">
+                <label for="quiet-end">Quiet Hours End</label>
+                <input type="time" id="quiet-end" name="quietHoursEnd">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="pref-email-address">Email Address</label>
+              <input type="email" id="pref-email-address" name="emailAddress" placeholder="your@email.com">
+            </div>
+
+            <button type="submit" class="btn btn-primary">Save Preferences</button>
+            <div id="preferences-result" class="result-message"></div>
+          </form>
+        </div>
+      </section>
+
+      <!-- Real-time Monitor Section -->
+      <section id="realtime-section" class="content-section">
+        <div class="card">
+          <div class="card-header">
+            <h3>Real-time Notification Monitor</h3>
+            <div class="connection-controls">
+              <button onclick="connectWebSocket()" class="btn btn-primary">Connect</button>
+              <button onclick="disconnectWebSocket()" class="btn btn-secondary">Disconnect</button>
+              <span id="ws-status" class="status-badge disconnected">Disconnected</span>
+            </div>
+          </div>
+          
+          <div id="realtime-notifications" class="realtime-container"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

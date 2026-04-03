@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NotifyHub - Real-time Notifications</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: #f5f7fa;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+      padding: 32px 40px;
+      border-radius: 12px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 12px rgba(30, 58, 138, 0.15);
+    }
+
+    .header h1 {
+      font-size: 1.75rem;
+      font-weight: 600;
+      color: white;
+      margin-bottom: 6px;
+      letter-spacing: -0.025em;
+    }
+
+    .header p {
+      font-size: 0.95rem;
+      color: rgba(255, 255, 255, 0.85);
+      font-weight: 400;
+    }
+
+    .card {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      padding: 28px;
+      margin-bottom: 20px;
+      border: 1px solid #e5e7eb;
+    }
+
+    .connection-section {
+      display: flex;
+      gap: 16px;
+      align-items: flex-end;
+      flex-wrap: wrap;
+    }
+
+    .input-group {
+      flex: 1;
+      min-width: 250px;
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 8px;
+      font-size: 0.9rem;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      transition: all 0.3s;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .button-group {
+      display: flex;
+      gap: 12px;
+    }
+
+    button {
+      padding: 11px 20px;
+      border: none;
+      border-radius: 6px;
+      font-weight: 500;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: #1e40af;
+      color: white;
+      border: 1px solid #1e40af;
+    }
+
+    .btn-primary:hover {
+      background: #1e3a8a;
+      border-color: #1e3a8a;
+    }
+
+    .btn-secondary {
+      background: white;
+      color: #374151;
+      border: 1px solid #d1d5db;
+    }
+
+    .btn-secondary:hover {
+      background: #f9fafb;
+      border-color: #9ca3af;
+    }
+
+    .status-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 24px;
+      padding: 16px 20px;
+      background: #f9fafb;
+      border-radius: 6px;
+      border: 1px solid #e5e7eb;
+    }
+
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 500;
+      font-size: 0.9rem;
+      color: #4b5563;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    .connected .status-dot {
+      background: #059669;
+    }
+
+    .disconnected .status-dot {
+      background: #dc2626;
+      animation: none;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+
+    .unread-badge {
+      background: #dc2626;
+      color: white;
+      padding: 5px 14px;
+      border-radius: 16px;
+      font-weight: 600;
+      font-size: 0.85rem;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .section-header h2 {
+      color: #111827;
+      font-size: 1.15rem;
+      font-weight: 600;
+      letter-spacing: -0.025em;
+    }
+
+    .notifications-container {
+      max-height: 500px;
+      overflow-y: auto;
+      margin-top: 16px;
+    }
+
+    .notification-item {
+      background: #ffffff;
+      border-left: 3px solid #1e40af;
+      padding: 18px;
+      margin-bottom: 10px;
+      border-radius: 6px;
+      transition: all 0.2s;
+      animation: slideIn 0.3s ease-out;
+      border: 1px solid #e5e7eb;
+      border-left: 3px solid #1e40af;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .notification-item:hover {
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      border-left-color: #1e3a8a;
+    }
+
+    .notification-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: 8px;
+    }
+
+    .notification-title {
+      font-weight: 700;
+      color: #1f2937;
+      font-size: 1rem;
+    }
+
+    .notification-time {
+      font-size: 0.8rem;
+      color: #6b7280;
+    }
+
+    .notification-body {
+      color: #4b5563;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    .notification-meta {
+      margin-top: 8px;
+      font-size: 0.8rem;
+      color: #9ca3af;
+      font-family: monospace;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #9ca3af;
+    }
+
+    .empty-state-icon {
+      font-size: 4rem;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    .log-toggle {
+      cursor: pointer;
+      user-select: none;
+      color: #1e40af;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+
+    .log-toggle:hover {
+      color: #1e3a8a;
+    }
+
+    .log-container {
+      margin-top: 16px;
+      background: #111827;
+      border-radius: 6px;
+      padding: 16px;
+      max-height: 300px;
+      overflow-y: auto;
+      display: none;
+      border: 1px solid #374151;
+    }
+
+    .log-container.visible {
+      display: block;
+    }
+
+    .log-entry {
+      font-family: 'Courier New', monospace;
+      color: #d1d5db;
+      font-size: 0.85rem;
+      margin-bottom: 8px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #374151;
+    }
+
+    .log-time {
+      color: #9ca3af;
+      margin-right: 8px;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      background: white;
+      padding: 18px 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+      min-width: 320px;
+      animation: toastSlide 0.3s ease-out;
+      z-index: 1000;
+      border: 1px solid #e5e7eb;
+      border-left: 4px solid #1e40af;
+    }
+
+    @keyframes toastSlide {
+      from {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    .toast-header {
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: #1f2937;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .toast-body {
+      color: #4b5563;
+      font-size: 0.9rem;
+    }
+
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #888;
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #555;
+    }
+
+    @media (max-width: 640px) {
+      .header h1 {
+        font-size: 1.8rem;
+      }
+      .connection-section {
+        flex-direction: column;
+      }
+      .button-group {
+        width: 100%;
+      }
+      button {
+        flex: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>NotifyHub</h1>
+      <p>Real-time Notification Management Dashboard</p>
+    </div>
+
+    <div class="card">
+      <div class="connection-section">
+        <div class="input-group">
+          <label for="userId">User ID (UUID)</label>
+          <input type="text" id="userId" placeholder="Enter your user ID to connect..." />
+        </div>
+        <div class="button-group">
+          <button class="btn-primary" onclick="connectSocket()">Connect</button>
+          <button class="btn-secondary" onclick="disconnectSocket()">Disconnect</button>
+        </div>
+      </div>
+
+      <div class="status-bar">
+        <div id="status" class="status-indicator disconnected">
+          <span class="status-dot"></span>
+          <span id="status-text">Disconnected</span>
+        </div>
+        <div id="unread-count" class="unread-badge" style="display: none;">0</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-header">
+        <h2>Notifications</h2>
+        <button class="btn-secondary" onclick="getUnreadCount()">Refresh Count</button>
+      </div>
+
+      <div id="notifications-list" class="notifications-container">
+        <div class="empty-state">
+          <div class="empty-state-icon">—</div>
+          <p style="font-weight: 500; color: #6b7280;">No notifications</p>
+          <p style="font-size: 0.85rem; margin-top: 8px; color: #9ca3af;">Connect and wait for incoming notifications</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="log-toggle" onclick="toggleLog()">
+        <span id="log-arrow">▶</span> System Logs
+      </div>
+      <div id="log-container" class="log-container"></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script>
+    let socket = null;
+    let notificationCount = 0;
+
+    function log(msg, type = 'info') {
+      const container = document.getElementById('log-container');
+      const entry = document.createElement('div');
+      entry.className = 'log-entry';
+      entry.innerHTML = `<span class="log-time">${new Date().toLocaleTimeString()}</span>${msg}`;
+      container.appendChild(entry);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function toggleLog() {
+      const container = document.getElementById('log-container');
+      const arrow = document.getElementById('log-arrow');
+      container.classList.toggle('visible');
+      arrow.textContent = container.classList.contains('visible') ? '▼' : '▶';
+    }
+
+    function setStatus(connected) {
+      const el = document.getElementById('status');
+      const textEl = document.getElementById('status-text');
+      if (connected) {
+        el.className = 'status-indicator connected';
+        textEl.textContent = 'Connected';
+      } else {
+        el.className = 'status-indicator disconnected';
+        textEl.textContent = 'Disconnected';
+      }
+    }
+
+    function addNotification(data) {
+      const container = document.getElementById('notifications-list');
+      
+      // Remove empty state if present
+      const emptyState = container.querySelector('.empty-state');
+      if (emptyState) {
+        emptyState.remove();
+      }
+
+      const item = document.createElement('div');
+      item.className = 'notification-item';
+      item.innerHTML = `
+        <div class="notification-header">
+          <div class="notification-title">${data.title || 'New Notification'}</div>
+          <div class="notification-time">${new Date().toLocaleTimeString()}</div>
+        </div>
+        <div class="notification-body">${data.message || data.body || 'No message content'}</div>
+        <div class="notification-meta">ID: ${data.id || 'N/A'} | Type: ${data.type || 'unknown'}</div>
+      `;
+      
+      container.insertBefore(item, container.firstChild);
+      notificationCount++;
+
+      // Show toast
+      showToast(data.title || 'New Notification', data.message || data.body || 'You have a new notification');
+    }
+
+    function showToast(title, message) {
+      const existingToast = document.querySelector('.toast');
+      if (existingToast) existingToast.remove();
+
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.innerHTML = `
+        <div class="toast-header">${title}</div>
+        <div class="toast-body">${message}</div>
+      `;
+      document.body.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.animation = 'toastSlide 0.3s ease-in reverse';
+        setTimeout(() => toast.remove(), 300);
+      }, 4000);
+    }
+
+    function connectSocket() {
+      const userId = document.getElementById('userId').value.trim();
+      if (!userId) {
+        alert('Please enter a User ID first');
+        return;
+      }
+
+      if (socket) socket.disconnect();
+
+      log(`Connecting as user: ${userId}...`);
+      socket = io('http://localhost:3000', {
+        auth: { userId }
+      });
+
+      socket.on('connect', () => {
+        setStatus(true);
+        log(`[CONNECTED] Socket ID: ${socket.id}`);
+      });
+
+      socket.on('disconnect', () => {
+        setStatus(false);
+        log('[DISCONNECTED] Connection closed');
+      });
+
+      socket.on('new_notification', (data) => {
+        log(`[NOTIFICATION] ${JSON.stringify(data)}`);
+        addNotification(data);
+      });
+
+      socket.on('marked-read', (data) => {
+        log(`[READ] Notification ID: ${data.notificationId}`);
+      });
+
+      socket.on('unread-count', (data) => {
+        updateUnreadCount(data.count);
+        log(`[COUNT] Unread: ${data.count}`);
+      });
+
+      socket.on('error', (error) => {
+        log(`[ERROR] ${error}`, 'error');
+      });
+    }
+
+    function disconnectSocket() {
+      if (socket) {
+        socket.disconnect();
+        socket = null;
+        log('[DISCONNECT] User initiated disconnect');
+      }
+    }
+
+    function updateUnreadCount(count) {
+      const badge = document.getElementById('unread-count');
+      badge.textContent = count;
+      badge.style.display = count > 0 ? 'block' : 'none';
+    }
+
+    function getUnreadCount() {
+      if (!socket || !socket.connected) {
+        alert('Please connect first');
+        return;
+      }
+      socket.emit('get-unread-count');
+      log('[REQUEST] Fetching unread count...');
+    }
+  </script>
+</body>
+</html>
