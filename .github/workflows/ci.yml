@@ -1,0 +1,50 @@
+# NotifyHub CI Pipeline
+# Runs automatically on every push and pull request to the main branch.
+# This pipeline ensures the codebase stays healthy by checking dependencies
+# and validating the Docker Compose configuration.
+
+name: NotifyHub CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build & Validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      # Step 1: Check out the repository code so the workflow can access it
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Node.js 20 and enable npm dependency caching
+      # Caching speeds up future runs by reusing previously downloaded packages
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      # Step 3: Install all project dependencies listed in package.json
+      - name: Install dependencies
+        run: npm install
+
+      # Step 4: Run a security audit to check for high or critical vulnerabilities
+      # continue-on-error: true means the pipeline won't fail hard here —
+      # it will report the issue but still move on to the next step
+      - name: Security audit
+        run: npm audit --audit-level=high
+        continue-on-error: true
+
+      # Step 5: Validate that docker-compose.yml has correct syntax
+      # This catches typos or misconfigurations before they reach production
+      - name: Validate docker-compose
+        run: docker compose config
